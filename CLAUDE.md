@@ -11,7 +11,7 @@
 - **Version format**: `{upstream}-r{N}` — e.g. `6.0.0-r1` → `6.0.0-r2` → `6.1.0-r1`
 - **Hotfix branches**: `hotfix/{upstream_version}-{CVE-ID}` — e.g. `hotfix/6.0.0-CVE-2024-1234`
 - **Script files**: `.sh.txt` extension only — enterprise policy blocks `.sh`
-- **No `latest` tags** in any Dockerfile — pin to explicit version or digest
+- **No `latest` tags** in any Dockerfile — pin to explicit version (`ubuntu:24.04`, `eclipse-temurin:25-jdk-noble`)
 - **No push / merge** without explicit human confirmation
 
 ---
@@ -44,7 +44,7 @@
 | Asked to run security scan | Follow `.agents/skills/security-scan.md` |
 | Go project CVE in dependency | Follow `.agents/skills/go-dependency-patch.md` |
 | Editing a Dockerfile | Preserve all three variants (source, Go, binary) |
-| Noticing a `latest` tag | Flag it and suggest pinned version |
+| Noticing a `latest` tag | Flag it and suggest current stable pinned version (verify on Docker Hub first) |
 | Finding secrets in code | Refuse to commit; alert user immediately |
 | Editing `.local/` tool Dockerfiles | Keep `python:*-slim` + `uv` pattern — never fat images |
 | Adding a new `.local/` compose service | Add `pull_policy: missing`; add `image:` if `build:` is used |
@@ -53,10 +53,14 @@
 
 ## Programming Language Version Policy
 
-- Use the **latest stable** version of each language in Dockerfiles
-- Verify before pinning that it is the current stable release
-- If latest causes a build failure, fall back to last known-good and tell the user
-- Never silently pin an old version — always inform and explain
+- `latest` **tag** is prohibited — always pin to an explicit version number (`ubuntu:24.04`, not `ubuntu:latest`)
+- **Always attempt the latest stable first** — never pre-emptively use an older version
+- **Progressive probe on failure**: latest → latest-1 minor → latest-2 minor → … until build passes
+  - Floor: never go below the version the upstream FOSS project itself requires
+  - If all versions fail: report every attempt + error, then ask user which version to risk
+- **Document the probe result** in Dockerfile comment + CHANGELOG: versions tried, errors, chosen version, revisit note
+- Never silently pin an old version — always show what was attempted and why it was chosen
+- Details and full algorithm: CONSTITUTION.md §Progressive Version Probe
 
 ---
 
@@ -74,4 +78,4 @@
 
 ---
 
-*Constitution version: 1.2.0 | Last updated: 2026-03-26*
+*Constitution version: 1.4.0 | Last updated: 2026-03-26*

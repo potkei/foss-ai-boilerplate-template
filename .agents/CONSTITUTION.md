@@ -246,6 +246,116 @@ When operating in monorepo mode (`projects/` directory exists):
 
 ---
 
+## Language & Build Tool Detection
+
+When onboarding a project, the AI must auto-detect the language and build tool from
+the upstream archive contents or repository — **never ask the user unless ambiguous**.
+
+### Detection Signals
+
+Inspect the archive listing (`tar -tzf archive.tar.gz | head -60`) or the upstream
+source tree. Match the first signal found, top-to-bottom:
+
+| Signal file(s) in source root | Language | Build tool | Dockerfile to use |
+|---|---|---|---|
+| `go.mod` | Go | `go build` | `Dockerfile.go` |
+| `Cargo.toml` | Rust | `cargo build` | `Dockerfile` (generic) |
+| `CMakeLists.txt` | C/C++ | CMake + Ninja/Make | `Dockerfile` |
+| `configure` or `configure.ac` | C/C++ | Autotools → Make | `Dockerfile` |
+| `Makefile` (no other signal) | C/C++ | Make | `Dockerfile` |
+| `meson.build` | C/C++ | Meson + Ninja | `Dockerfile` |
+| `pom.xml` | Java | Maven | `Dockerfile` |
+| `build.gradle` or `build.gradle.kts` | Java/Kotlin | Gradle | `Dockerfile` |
+| `pyproject.toml` | Python | uv / poetry / hatch | `Dockerfile` |
+| `setup.py` (no `pyproject.toml`) | Python | setuptools | `Dockerfile` |
+| `package.json` + `node_modules` absent | Node.js | npm / yarn / pnpm | `Dockerfile` |
+| `Gemfile` | Ruby | Bundler + Rake | `Dockerfile` |
+| `*.csproj` or `*.sln` | .NET/C# | dotnet | `Dockerfile` |
+| `composer.json` | PHP | Composer | `Dockerfile` |
+
+### Builder Base Images
+
+**Rule: Always pin to the current stable version number — never use `latest` tag, never silently pin an old version.**
+
+`ubuntu:latest` → **prohibited**. `ubuntu:24.04` → **required** (pinned to current LTS).
+
+Before writing any Dockerfile, verify the current stable release of each base image:
+
+| Build tool | Builder base pattern | How to verify current stable |
+|---|---|---|
+| Go | `golang:<X.Y.Z>-bookworm` | https://hub.docker.com/_/golang — match upstream `go.mod` `go` directive |
+| Rust | `rust:<X.Y.Z>-slim-bookworm` | https://hub.docker.com/_/rust — match upstream `Cargo.toml` edition |
+| CMake / Autotools / Make / Meson | `ubuntu:<YY.MM>` (current LTS) | https://hub.docker.com/_/ubuntu — use current LTS e.g. `24.04` |
+| Maven | `maven:<X.Y.Z>-eclipse-temurin-<N>` | https://hub.docker.com/_/maven — match upstream `pom.xml` Java version |
+| Gradle | `gradle:<X.Y>-jdk<N>` | https://hub.docker.com/_/gradle — match upstream `build.gradle` sourceCompatibility |
+| Python | `python:<X.Y>-slim-bookworm` | https://hub.docker.com/_/python — match upstream `pyproject.toml` `requires-python` |
+| Node.js | `node:<X.Y.Z>-bookworm-slim` | https://hub.docker.com/_/node — match upstream `package.json` `engines.node` |
+| Java (runtime) | `eclipse-temurin:<N>-jre-noble` | https://hub.docker.com/_/eclipse-temurin — use current LTS or latest GA JDK |
+
+### Progressive Version Probe
+
+When choosing a base image version, always try the **latest stable** first and step down
+only on build failure — never pre-emptively pin an older version.
+
+**Algorithm (apply to every language/OS version decision):**
+
+```
+1. Start:    latest stable (e.g. python:3.14, ubuntu:24.04, eclipse-temurin:25-jdk-noble)
+2. Attempt:  docker build with that version
+3. Passes?   → Done. Record chosen version in Dockerfile + CHANGELOG note.
+4. Fails?    → Note the exact error. Step down one minor version (3.14 → 3.13).
+5. Floor:    Never go below the version the upstream FOSS project itself targets
+             (e.g. if requirements.txt says python>=3.11, floor = 3.11).
+6. Repeat 2–5 until a version passes.
+7. All fail? → Stop. Report every version tried + its error to the user.
+             Ask: "Which version are you willing to risk?" before continuing.
+```
+
+**What to record when a fallback is used:**
+
+In the Dockerfile comment and CHANGELOG:
+```dockerfile
+# Base: python:3.12-slim-bookworm
+# Attempted: 3.14 (build error: ...), 3.13 (build error: ...)
+# Pinned 3.12 — first version that compiles cleanly.
+# Revisit when upstream supports 3.13+.
+```
+
+**Never:**
+- Skip versions silently
+- Pin the version the upstream ships without trying newer ones first
+- Ask the user which version to use before attempting the probe yourself
+
+### Builder Stage Package Installs
+
+Emit only the packages the detected build system actually needs — do not install
+blanket dev toolchains. Examples:
+
+```dockerfile
+# CMake + Make (C/C++)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    cmake make gcc g++ ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Autotools (C/C++)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    autoconf automake libtool make gcc g++ ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Meson (C/C++)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    meson ninja-build gcc g++ ca-certificates && rm -rf /var/lib/apt/lists/*
+```
+
+### When to Ask the User
+
+Ask **only** if:
+- No detection signal is found in the archive root (nested layout — go one level deeper)
+- Two conflicting signals are present (e.g. both `Makefile` and `CMakeLists.txt`)
+- The detected tool requires a version that must be pinned (ask for the exact version)
+
+Otherwise, proceed and report what was detected.
+
+---
+
 ## Future Roadmap
 
 Items planned but not yet implemented. AI tools must NOT implement these speculatively.
@@ -271,4 +381,4 @@ Items planned but not yet implemented. AI tools must NOT implement these specula
 
 ---
 
-*Version: 1.2.0 | Updated: 2026-03-26*
+*Version: 1.4.0 | Updated: 2026-03-26*
