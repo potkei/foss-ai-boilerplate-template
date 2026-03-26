@@ -8,6 +8,7 @@
 ## Critical Rules (quick ref — details in CONSTITUTION.md)
 
 - **Source build always first**: `Dockerfile` / `Dockerfile.go` — never default to binary
+- **Runtime image priority**: `scratch` → `distroless` → `*-slim` — never full OS images
 - **Version format**: `{upstream}-r{N}` — e.g. `6.0.0-r1` → `6.0.0-r2` → `6.1.0-r1`
 - **Hotfix branches**: `hotfix/{upstream_version}-{CVE-ID}` — e.g. `hotfix/6.0.0-CVE-2024-1234`
 - **Script files**: `.sh.txt` extension only — enterprise policy blocks `.sh`
@@ -78,4 +79,4 @@
 
 ---
 
-*Constitution version: 1.4.0 | Last updated: 2026-03-26*
+*Constitution version: 1.5.0 | Last updated: 2026-03-26*

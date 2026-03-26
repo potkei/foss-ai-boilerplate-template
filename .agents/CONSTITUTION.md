@@ -134,6 +134,27 @@ RUN for p in $(ls /patches/*.patch | sort); do patch -p1 < "$p" || exit 1; done
 - Images signed on every release via Cosign
 - GPG signature verified for upstream archives where available
 
+### 11. Runtime Image Policy (priority order)
+
+Runtime stages must use the smallest possible base to minimise CVE surface:
+
+| Priority | Base | When to use |
+|---|---|---|
+| 1 — preferred | `scratch` | Compiled binaries (Go static, C/C++ static) or JVM with jlink + copied JRE/glibc |
+| 2 — fallback | `gcr.io/distroless/*` | When scratch is impractical (e.g. complex dynamic linking, missing /proc requirements) |
+| 3 — last resort | `*-slim` / Alpine | Only when distroless is blocked by a documented dependency; requires CHANGELOG entry |
+| ✗ prohibited | Full OS images | Never use ubuntu, debian, ubi, jammy, etc. as runtime base |
+
+**JVM projects:** use `jlink` to produce a custom minimal JRE, copy it plus all `ldd`-resolved shared
+libraries into `scratch`. Non-root execution via numeric UID (`USER 10001:10001`) — no `useradd`
+in scratch.
+
+**Go projects:** compile with `CGO_ENABLED=0 GOOS=linux` to produce a fully static binary, then
+`FROM scratch` with only the binary, CA certs, and a minimal `/etc/passwd`.
+
+Downgrading from scratch → distroless → slim requires a CHANGELOG entry explaining why scratch
+was not feasible.
+
 ---
 
 ## Team Rules
@@ -362,7 +383,6 @@ Items planned but not yet implemented. AI tools must NOT implement these specula
 
 **Near-term:**
 - Multi-arch builds — `linux/amd64` + `linux/arm64` via BuildKit `--platform`
-- Distroless/scratch runtime images — separate build stage from runtime stage
 - Automated upstream sync — scheduled CI job detecting new upstream releases, opening PRs
 - SBOM diff on PRs — compare SBOM between base and PR to surface new dependencies
 - `.local/docker-compose.run.override.yml` pattern — per-project runtime config override
@@ -381,4 +401,4 @@ Items planned but not yet implemented. AI tools must NOT implement these specula
 
 ---
 
-*Version: 1.4.0 | Updated: 2026-03-26*
+*Version: 1.5.0 | Updated: 2026-03-26*
