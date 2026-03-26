@@ -9,6 +9,8 @@
 #   ./build.sh --scan --cve           # run only CVE scan
 #   ./build.sh --release              # full release pipeline
 #   ./build.sh --docs                 # serve documentation
+#   ./build.sh --registry             # start local registry + UI
+#   ./build.sh --push-local           # build then push to localhost:5000
 #   BUILD_STRATEGY=binary ./build.sh  # override via env var
 # =============================================================================
 set -euo pipefail
@@ -32,7 +34,8 @@ while [ $# -gt 0 ]; do
     --scan)      ACTION="scan"; shift ;;
     --release)   ACTION="release"; shift ;;
     --docs)      ACTION="docs"; shift ;;
-    --registry)  ACTION="registry"; shift ;;
+    --registry)   ACTION="registry"; shift ;;
+    --push-local) ACTION="push-local"; shift ;;
     --sast|--cve|--deps|--secrets|--iac)
                  SCAN_ARGS+=("$1"); shift ;;
     --help|-h)
@@ -56,8 +59,9 @@ while [ $# -gt 0 ]; do
       echo "  --release    Full pipeline: build + scan + tag + sign + push"
       echo ""
       echo "Other:"
-      echo "  --docs       Serve MkDocs documentation at http://localhost:8000"
-      echo "  --registry   Start local Harbor registry at http://localhost:80"
+      echo "  --docs         Serve MkDocs documentation at http://localhost:8000"
+      echo "  --registry     Start local registry (localhost:5000) + UI (localhost:5001)"
+      echo "  --push-local   Build source image then push to localhost:5000"
       echo ""
       echo "Environment:"
       echo "  BUILD_STRATEGY=source|binary   Override build strategy"
@@ -166,9 +170,19 @@ case "${ACTION}" in
     ;;
 
   registry)
-    echo "--- Starting local Harbor registry at http://localhost:80 ---"
+    echo "--- Starting local registry ---"
     docker compose -f .local/docker-compose.registry.yml up -d
-    echo "Harbor UI: http://localhost:80 (admin / Harbor12345)"
+    echo "Registry: http://localhost:5000"
+    echo "Registry UI: http://localhost:5001"
+    ;;
+
+  push-local)
+    IMAGE_REGISTRY="${IMAGE_REGISTRY:-localhost:5000}"
+    echo "--- Building and pushing to ${IMAGE_REGISTRY} ---"
+    BUILD_STRATEGY="source" docker compose -f .local/docker-compose.build.yaml --profile source build
+    IMAGE="${IMAGE_REGISTRY}/${PROJECT_NAME}:${OUR_VERSION}-source"
+    docker push "${IMAGE}"
+    echo "Pushed: ${IMAGE}"
     ;;
 
 esac

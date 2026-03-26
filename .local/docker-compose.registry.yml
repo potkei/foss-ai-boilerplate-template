@@ -1,124 +1,49 @@
 # =============================================================================
-# LOCAL HARBOR REGISTRY
-# Harbor Community Edition — enterprise-grade OCI registry with built-in scanning,
-# image promotion (dev → staging → prod), RBAC, and content trust.
-# Usage: docker compose -f docker-compose.registry.yml up -d
-# UI: http://localhost:80  (admin / Harbor12345 — change on first login)
+# LOCAL REGISTRY — OCI-compatible image storage for local dev
+#
+# registry:2  → stores images          → localhost:5000
+# registry-ui → browse images in browser → http://localhost:5001
+#
+# Usage:
+#   make registry-up          # start registry + UI
+#   make push-local           # build and push to localhost:5000
+#   make registry-down        # stop
+#
+# Push manually:
+#   podman push --tls-verify=false localhost:5000/<project>:<tag>
+#
+# NOTE: For staging/prod use Harbor via its official installer (.deploy/).
+#       This registry is for local dev only — data lives in a named volume.
 # =============================================================================
 
 name: foss-registry
 
 services:
 
-  # ---------------------------------------------------------------------------
-  # Harbor Core
-  # ---------------------------------------------------------------------------
-  harbor-log:
-    image: goharbor/harbor-log:${HARBOR_VERSION:-v2.10.0}
-    pull_policy: missing
-    restart: unless-stopped
-    volumes:
-      - /var/log/docker/:/var/log/docker/:z
-      - ../harbor-config/log/logrotate.conf:/etc/logrotate.d/logrotate.conf:z
-      - ../harbor-config/log/rsyslog_docker.conf:/etc/rsyslog.d/rsyslog_docker.conf:z
-    ports:
-      - "127.0.0.1:1514:10514"
-
-  harbor-db:
-    image: goharbor/harbor-db:${HARBOR_VERSION:-v2.10.0}
-    pull_policy: missing
-    restart: unless-stopped
-    environment:
-      POSTGRES_PASSWORD: root123
-    volumes:
-      - harbor_db_data:/var/lib/postgresql/data:z
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-  harbor-redis:
-    image: goharbor/redis-photon:${HARBOR_VERSION:-v2.10.0}
-    pull_policy: missing
-    restart: unless-stopped
-    volumes:
-      - harbor_redis_data:/var/lib/redis:z
-
   registry:
-    image: goharbor/registry-photon:${HARBOR_VERSION:-v2.10.0}
-    pull_policy: missing
-    restart: unless-stopped
-    volumes:
-      - harbor_registry_data:/storage:z
-      - ../harbor-config/registry/:/etc/registry/:z
-    depends_on:
-      - harbor-log
-
-  harbor-core:
-    image: goharbor/harbor-core:${HARBOR_VERSION:-v2.10.0}
-    pull_policy: missing
-    restart: unless-stopped
-    depends_on:
-      harbor-db:
-        condition: service_healthy
-      harbor-redis:
-        condition: service_started
-    environment:
-      CORE_SECRET: CHANGEME
-      HARBOR_ADMIN_PASSWORD: Harbor12345
-      DATABASE_TYPE: postgresql
-      POSTGRESQL_HOST: harbor-db
-      POSTGRESQL_PORT: "5432"
-      POSTGRESQL_DATABASE: registry
-      POSTGRESQL_USERNAME: postgres
-      POSTGRESQL_PASSWORD: root123
-      REDIS_HOST: harbor-redis
-      REDIS_PORT: "6379"
-    volumes:
-      - harbor_core_data:/data:z
-
-  harbor-portal:
-    image: goharbor/harbor-portal:${HARBOR_VERSION:-v2.10.0}
-    pull_policy: missing
-    restart: unless-stopped
-    depends_on:
-      - harbor-core
-
-  harbor-jobservice:
-    image: goharbor/harbor-jobservice:${HARBOR_VERSION:-v2.10.0}
-    pull_policy: missing
-    restart: unless-stopped
-    depends_on:
-      - harbor-core
-    environment:
-      CORE_SECRET: CHANGEME
-
-  nginx:
-    image: goharbor/nginx-photon:${HARBOR_VERSION:-v2.10.0}
+    image: registry:2
     pull_policy: missing
     restart: unless-stopped
     ports:
-      - "80:8080"
-      - "443:8443"
+      - "5000:5000"
+    volumes:
+      - registry_data:/var/lib/registry
+    environment:
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+
+  registry-ui:
+    image: joxit/docker-registry-ui:latest
+    pull_policy: missing
+    restart: unless-stopped
+    ports:
+      - "5001:80"
+    environment:
+      REGISTRY_TITLE: "Local FOSS Registry"
+      REGISTRY_URL: http://registry:5000
+      SINGLE_REGISTRY: "true"
+      DELETE_IMAGES: "true"
     depends_on:
-      - harbor-portal
-      - harbor-core
       - registry
 
 volumes:
-  harbor_db_data:
-  harbor_redis_data:
-  harbor_registry_data:
-  harbor_core_data:
-
-# =============================================================================
-# Image Promotion Projects (create via Harbor UI after startup):
-#   dev     → push patched images here first
-#   staging → promote from dev after scan passes
-#   prod    → promote from staging after manual approval
-#
-# Configure replication rules in Harbor UI:
-#   dev → staging: auto on scan pass
-#   staging → prod: manual trigger only
-# =============================================================================
+  registry_data:

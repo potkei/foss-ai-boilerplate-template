@@ -43,7 +43,7 @@ services:
       dockerfile: Dockerfile
       args:
         <<: *common-args
-    image: ${IMAGE_REGISTRY:-localhost}/${PROJECT_NAME:-foss-project}:${OUR_VERSION:-dev}-source
+    image: ${IMAGE_REGISTRY:-localhost:5000}/${PROJECT_NAME:-foss-project}:${OUR_VERSION:-dev}-source
     profiles:
       - source
       - all
@@ -59,7 +59,7 @@ services:
       args:
         <<: *common-args
         GO_VERSION: ${GO_VERSION:-1.22}
-    image: ${IMAGE_REGISTRY:-localhost}/${PROJECT_NAME:-foss-project}:${OUR_VERSION:-dev}-source-go
+    image: ${IMAGE_REGISTRY:-localhost:5000}/${PROJECT_NAME:-foss-project}:${OUR_VERSION:-dev}-source-go
     profiles:
       - source-go
       - all
@@ -76,7 +76,7 @@ services:
         BINARY_URL: ${BINARY_URL:-REPLACE_ME}
         BINARY_SHA256: ${BINARY_SHA256:-REPLACE_ME}
         BINARY_GPG_URL: ${BINARY_GPG_URL:-}
-    image: ${IMAGE_REGISTRY:-localhost}/${PROJECT_NAME:-foss-project}:${OUR_VERSION:-dev}-binary
+    image: ${IMAGE_REGISTRY:-localhost:5000}/${PROJECT_NAME:-foss-project}:${OUR_VERSION:-dev}-binary
     profiles:
       - binary
       - all

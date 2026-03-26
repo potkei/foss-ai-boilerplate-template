@@ -59,11 +59,17 @@ run-down:              ## Stop the running app
 	docker compose -f .local/docker-compose.run.yml down
 
 # Registry
-registry-up:           ## Start local Harbor registry
+registry-up:           ## Start local registry (localhost:5000) + UI (localhost:5001)
 	./build.sh --registry
 
-registry-down:         ## Stop local Harbor registry
+registry-down:         ## Stop local registry
 	docker compose -f .local/docker-compose.registry.yml down
+
+registry-ui:           ## Open registry UI in browser
+	open http://localhost:5001
+
+push-local:            ## Build source image and push to localhost:5000
+	./build.sh --push-local
 
 # Setup
 init:                  ## First-run setup (translate scripts, create dirs)
@@ -87,4 +93,4 @@ clean-all:             ## Remove everything including volumes
 help:                  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: build build-binary build-both build-go scan scan-cve scan-sast scan-deps scan-secrets scan-iac release docs docs-build run run-bg run-down registry-up registry-down init onboard clean clean-all help
+.PHONY: build build-binary build-both build-go scan scan-cve scan-sast scan-deps scan-secrets scan-iac release docs docs-build run run-bg run-down registry-up registry-down registry-ui push-local init onboard clean clean-all help
