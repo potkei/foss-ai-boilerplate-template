@@ -41,27 +41,42 @@ if [ ${#MISSING[@]} -gt 0 ]; then
 fi
 
 # jq — required for JSON parsing in build/scan/release scripts.
-# If missing, try to build a compatible replacement from tools/jsonq using Go.
-if ! command -v jq >/dev/null 2>&1; then
+# Minimum version: 1.6. If missing or too old, build from .tools/jsonq using Go.
+_jq_version_ok() {
+  command -v jq >/dev/null 2>&1 || return 1
+  local ver major minor
+  ver=$(jq --version 2>/dev/null | sed 's/jq-//')
+  major=$(echo "$ver" | cut -d. -f1)
+  minor=$(echo "$ver" | cut -d. -f2)
+  [ "${major:-0}" -gt 1 ] || { [ "${major:-0}" -eq 1 ] && [ "${minor:-0}" -ge 6 ]; }
+}
+
+if _jq_version_ok; then
+  echo "  jq $(jq --version) — OK."
+else
   # Determine output binary name (jq.exe on Windows/Git Bash, jq elsewhere)
   JQ_BIN="jq"
   case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) JQ_BIN="jq.exe" ;; esac
-
   JQ_OUT="${ROOT_DIR}/.tools/bin/${JQ_BIN}"
 
+  if command -v jq >/dev/null 2>&1; then
+    echo "  WARN: jq $(jq --version) is too old (need >= 1.6) — building replacement from .tools/jsonq."
+  else
+    echo "  INFO: jq not found — building from .tools/jsonq using Go (GOPROXY=${GOPROXY:-direct})."
+  fi
+
   if command -v go >/dev/null 2>&1; then
-    echo "  INFO: jq not found — building from tools/jsonq using Go (GOPROXY=${GOPROXY:-direct})..."
     if (cd "${ROOT_DIR}/.tools/jsonq" && go build -o "${JQ_OUT}" . 2>&1); then
       echo "  INFO: Built .tools/bin/${JQ_BIN} successfully."
-      echo "  INFO: Add .tools/bin to your PATH: export PATH=\"\$PATH:${ROOT_DIR}/.tools/bin\""
+      echo "  INFO: Add to your PATH: export PATH=\"\$PATH:${ROOT_DIR}/.tools/bin\""
       export PATH="${ROOT_DIR}/.tools/bin:${PATH}"
     else
-      echo "  WARN: Go build failed. Install jq manually or check your GOPROXY setting."
+      echo "  WARN: Go build failed. Install jq >= 1.6 manually or check your GOPROXY setting."
     fi
   else
-    echo "  WARN: jq not found and Go not installed."
+    echo "  WARN: Go not installed. Cannot auto-build jq."
     echo "        Install Go (https://go.dev/dl/) then re-run ./init.sh — it will build jq automatically."
-    echo "        Or install jq directly: https://jqlang.github.io/jq/download/"
+    echo "        Or install jq >= 1.6 directly: https://jqlang.github.io/jq/download/"
   fi
 fi
 
