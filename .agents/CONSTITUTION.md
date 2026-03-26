@@ -315,65 +315,24 @@ Before writing any Dockerfile, verify the current stable release of each base im
 
 ### Progressive Version Probe
 
-When choosing a base image version, always try the **latest stable** first and step down
-only on build failure — never pre-emptively pin an older version.
+Always try **latest stable** first; step down one minor version on each build failure; floor = upstream's own minimum requirement. Never silently pin an old version.
 
-**Algorithm (apply to every language/OS version decision):**
+**Steps:** latest → build → pass? done, record in Dockerfile comment + CHANGELOG → fail? note error, step down → repeat until pass or floor hit → if all fail: report every version + error, ask user.
 
-```
-1. Start:    latest stable (e.g. python:3.14, ubuntu:24.04, eclipse-temurin:25-jdk-noble)
-2. Attempt:  docker build with that version
-3. Passes?   → Done. Record chosen version in Dockerfile + CHANGELOG note.
-4. Fails?    → Note the exact error. Step down one minor version (3.14 → 3.13).
-5. Floor:    Never go below the version the upstream FOSS project itself targets
-             (e.g. if requirements.txt says python>=3.11, floor = 3.11).
-6. Repeat 2–5 until a version passes.
-7. All fail? → Stop. Report every version tried + its error to the user.
-             Ask: "Which version are you willing to risk?" before continuing.
-```
-
-**What to record when a fallback is used:**
-
-In the Dockerfile comment and CHANGELOG:
+**Record on fallback** (Dockerfile comment + CHANGELOG):
 ```dockerfile
 # Base: python:3.12-slim-bookworm
-# Attempted: 3.14 (build error: ...), 3.13 (build error: ...)
-# Pinned 3.12 — first version that compiles cleanly.
-# Revisit when upstream supports 3.13+.
+# Attempted: 3.14 (error: ...), 3.13 (error: ...)
+# Pinned 3.12 — first version that compiles cleanly. Revisit when upstream supports 3.13+.
 ```
-
-**Never:**
-- Skip versions silently
-- Pin the version the upstream ships without trying newer ones first
-- Ask the user which version to use before attempting the probe yourself
 
 ### Builder Stage Package Installs
 
-Emit only the packages the detected build system actually needs — do not install
-blanket dev toolchains. Examples:
-
-```dockerfile
-# CMake + Make (C/C++)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    cmake make gcc g++ ca-certificates && rm -rf /var/lib/apt/lists/*
-
-# Autotools (C/C++)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    autoconf automake libtool make gcc g++ ca-certificates && rm -rf /var/lib/apt/lists/*
-
-# Meson (C/C++)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    meson ninja-build gcc g++ ca-certificates && rm -rf /var/lib/apt/lists/*
-```
+Install only what the detected build system needs — no blanket dev toolchains. Always append `&& rm -rf /var/lib/apt/lists/*`. Examples: CMake needs `cmake make gcc g++`; Autotools needs `autoconf automake libtool make gcc g++`; Meson needs `meson ninja-build gcc g++`.
 
 ### When to Ask the User
 
-Ask **only** if:
-- No detection signal is found in the archive root (nested layout — go one level deeper)
-- Two conflicting signals are present (e.g. both `Makefile` and `CMakeLists.txt`)
-- The detected tool requires a version that must be pinned (ask for the exact version)
-
-Otherwise, proceed and report what was detected.
+Ask **only** if: no detection signal found (try one level deeper first), two conflicting signals present, or detected tool requires an explicit version pin. Otherwise auto-detect and report.
 
 ---
 

@@ -18,8 +18,15 @@ applies CVE security patches, compiles from source, ships patched container imag
 - `.local/` for compose files + tool Dockerfiles; `.cicd/` is pipeline only — never mix
 - `.local/` compose services: `pull_policy: missing`; `image: foss-*:local` on build services
 - Python tool images: `python:*-slim` + `uv` from `ghcr.io/astral-sh/uv`
+- Runtime image priority: `scratch` → `gcr.io/distroless/*` → `*-slim` — full OS prohibited as runtime base
+- Language auto-detect: `go.mod`→Go, `Cargo.toml`→Rust, `CMakeLists.txt`→C/C++, `pom.xml`→Java, `pyproject.toml`→Python — full table: CONSTITUTION §Language & Build Tool Detection
+- Version probe: latest stable first → step down on failure → floor = upstream minimum — full algorithm: CONSTITUTION §Progressive Version Probe
 
 ## Skills in `.agents/skills/`
 
 `cve-patch` | `build-strategy-switch` | `onboard-foss-project` | `release`
 `upstream-sync` | `upstream-contribute` | `security-scan` | `go-dependency-patch` | `monorepo-add-project`
+
+---
+
+*Synced to CONSTITUTION.md v1.5.0 | Updated: 2026-03-26*

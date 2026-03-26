@@ -20,6 +20,9 @@ applies CVE security patches, compiles from source, and ships patched container 
 9. **`.local/` vs `.cicd/`** — compose files and tool Dockerfiles go in `.local/`; `.cicd/` is pipeline only
 10. **`pull_policy: missing`** — all `.local/` compose services must set this; add `image:` if `build:` is used
 11. **Python tool images** — use `python:*-slim` + `uv` (copied from `ghcr.io/astral-sh/uv`) — never fat images
+12. **Runtime image priority** — `scratch` (static binary) → `gcr.io/distroless/*` → `*-slim` — full OS images (ubuntu/debian) prohibited as runtime base; downgrade requires CHANGELOG entry
+13. **Language auto-detect** — infer from `go.mod` → Go, `Cargo.toml` → Rust, `CMakeLists.txt` → C/C++, `pom.xml` → Java, `pyproject.toml` → Python, etc.; never ask unless ambiguous. Full table: CONSTITUTION §Language & Build Tool Detection
+14. **Version probe** — always try latest stable base image first; step down one minor on failure; floor = upstream's minimum requirement; never silently pin old version. Full algorithm: CONSTITUTION §Progressive Version Probe
 
 ## Skills in `.agents/skills/`
 
@@ -39,3 +42,7 @@ applies CVE security patches, compiles from source, and ships patched container 
 - Dockerfiles: multi-stage, `ARG` before `FROM` for build args, pinned base images
 - YAML: 2-space indent, quoted strings for values that could be misinterpreted
 - Helm: follow existing templates in `helm/templates/`
+
+---
+
+*Synced to CONSTITUTION.md v1.5.0 | Updated: 2026-03-26*

@@ -18,9 +18,16 @@ compiles from source, ships patched container images. No git-cloning of upstream
 - `.local/` = compose files + tool Dockerfiles; `.cicd/` = pipeline only — never mix
 - `.local/` compose services: `pull_policy: missing`; add `image:` on services with `build:`
 - Python tool images: `python:*-slim` + `uv` from `ghcr.io/astral-sh/uv` — no fat images
+- Runtime image priority: `scratch` (static) → `gcr.io/distroless/*` → `*-slim` — full OS images prohibited as runtime base; downgrade needs CHANGELOG entry
+- Language auto-detect: `go.mod`→Go, `Cargo.toml`→Rust, `CMakeLists.txt`→C/C++, `pom.xml`→Java, `pyproject.toml`→Python — full table: CONSTITUTION §Language & Build Tool Detection
+- Version probe: always try latest stable base image first; step down one minor on failure; floor = upstream's minimum; never silently pin — full algorithm: CONSTITUTION §Progressive Version Probe
 
 ## Skills in `.agents/skills/`
 
 `cve-patch.md` | `build-strategy-switch.md` | `onboard-foss-project.md`
 `release.md` | `upstream-sync.md` | `upstream-contribute.md`
 `security-scan.md` | `go-dependency-patch.md` | `monorepo-add-project.md`
+
+---
+
+*Synced to CONSTITUTION.md v1.5.0 | Updated: 2026-03-26*

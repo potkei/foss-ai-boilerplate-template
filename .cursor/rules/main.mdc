@@ -20,6 +20,9 @@ Read `.agents/CONSTITUTION.md` first. All rules there apply here.
 - `.local/` for compose files + tool Dockerfiles; `.cicd/` for pipeline only — never mix
 - `.local/` compose services: `pull_policy: missing` + `image: foss-*:local` on build services
 - Python tool images: `python:*-slim` + `uv` binary from `ghcr.io/astral-sh/uv`
+- Runtime image priority: `scratch` (static) → `gcr.io/distroless/*` → `*-slim` — never full OS as runtime base; downgrade needs CHANGELOG entry
+- Language auto-detect from source signals (`go.mod`→Go, `Cargo.toml`→Rust, `CMakeLists.txt`→C/C++, `pom.xml`→Java, `pyproject.toml`→Python, etc.) — full table: CONSTITUTION §Language & Build Tool Detection
+- Version probe: try latest stable first, step down one minor on failure, floor = upstream's minimum; never silently pin old version — full algorithm: CONSTITUTION §Progressive Version Probe
 
 ## Skills
 
@@ -34,3 +37,7 @@ Read `.agents/CONSTITUTION.md` first. All rules there apply here.
 | Run security scans | `.agents/skills/security-scan.md` |
 | Go dependency CVE | `.agents/skills/go-dependency-patch.md` |
 | Add monorepo subproject | `.agents/skills/monorepo-add-project.md` |
+
+---
+
+*Synced to CONSTITUTION.md v1.5.0 | Updated: 2026-03-26*
