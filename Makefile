@@ -16,7 +16,7 @@ build-both:            ## Build both strategies
 	./build.sh --both
 
 build-go:              ## Source build for Go projects
-	docker compose -f docker-compose.build.yaml --profile source-go build
+	docker compose -f .local/docker-compose.build.yaml --profile source-go build
 
 # Scan
 scan:                  ## Run all security scans
@@ -46,14 +46,24 @@ docs:                  ## Serve MkDocs at http://localhost:8000
 	./build.sh --docs
 
 docs-build:            ## Build static docs site
-	docker compose -f docker-compose.docs.yml run docs build
+	docker compose -f .local/docker-compose.docs.yml run docs build
+
+# Run
+run:                   ## Run the built app locally
+	docker compose -f .local/docker-compose.run.yml up
+
+run-bg:                ## Run the built app in background
+	docker compose -f .local/docker-compose.run.yml up -d
+
+run-down:              ## Stop the running app
+	docker compose -f .local/docker-compose.run.yml down
 
 # Registry
 registry-up:           ## Start local Harbor registry
 	./build.sh --registry
 
 registry-down:         ## Stop local Harbor registry
-	docker compose -f docker-compose.registry.yml down
+	docker compose -f .local/docker-compose.registry.yml down
 
 # Setup
 init:                  ## First-run setup (translate scripts, create dirs)
@@ -65,16 +75,16 @@ onboard:               ## Onboard a new FOSS project (interactive)
 # Cleanup
 clean:                 ## Remove reports and build artifacts
 	rm -rf reports/*.json reports/*.html reports/*.txt
-	docker compose -f docker-compose.build.yaml down --rmi local 2>/dev/null || true
+	docker compose -f .local/docker-compose.build.yaml down --rmi local 2>/dev/null || true
 
 clean-all:             ## Remove everything including volumes
-	docker compose -f docker-compose.scan.yml down -v 2>/dev/null || true
-	docker compose -f docker-compose.registry.yml down -v 2>/dev/null || true
-	docker compose -f docker-compose.build.yaml down --rmi local -v 2>/dev/null || true
+	docker compose --env-file .cicd/scan-versions.env -f .local/docker-compose.scan.yml down -v 2>/dev/null || true
+	docker compose -f .local/docker-compose.registry.yml down -v 2>/dev/null || true
+	docker compose -f .local/docker-compose.build.yaml down --rmi local -v 2>/dev/null || true
 	rm -rf reports/*.json reports/*.html reports/*.txt
 
 # Help
 help:                  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: build build-binary build-both build-go scan scan-cve scan-sast scan-deps scan-secrets scan-iac release docs docs-build registry-up registry-down init onboard clean clean-all help
+.PHONY: build build-binary build-both build-go scan scan-cve scan-sast scan-deps scan-secrets scan-iac release docs docs-build run run-bg run-down registry-up registry-down init onboard clean clean-all help

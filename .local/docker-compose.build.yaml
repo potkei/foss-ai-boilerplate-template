@@ -39,7 +39,7 @@ services:
   # ---------------------------------------------------------------------------
   app-source:
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile
       args:
         <<: *common-args
@@ -54,7 +54,7 @@ services:
   # ---------------------------------------------------------------------------
   app-source-go:
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile.go
       args:
         <<: *common-args
@@ -69,7 +69,7 @@ services:
   # ---------------------------------------------------------------------------
   app-binary:
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile.binary
       args:
         <<: *common-args

@@ -103,7 +103,7 @@ case "${ACTION}" in
       if [ -x "${SCRIPTS}/build-source.sh" ]; then
         "${SCRIPTS}/build-source.sh"
       else
-        docker compose -f docker-compose.build.yaml --profile source build
+        docker compose -f .local/docker-compose.build.yaml --profile source build
       fi
     elif [ "${BUILD_STRATEGY}" = "binary" ]; then
       echo "--- Binary fallback build ---"
@@ -111,7 +111,7 @@ case "${ACTION}" in
       if [ -x "${SCRIPTS}/build-binary.sh" ]; then
         "${SCRIPTS}/build-binary.sh"
       else
-        docker compose -f docker-compose.build.yaml --profile binary build
+        docker compose -f .local/docker-compose.build.yaml --profile binary build
       fi
     else
       echo "ERROR: Unknown BUILD_STRATEGY: ${BUILD_STRATEGY}"
@@ -122,7 +122,7 @@ case "${ACTION}" in
 
   build-both)
     echo "--- Building both strategies ---"
-    docker compose -f docker-compose.build.yaml --profile all build
+    docker compose -f .local/docker-compose.build.yaml --profile all build
     ;;
 
   scan)
@@ -133,11 +133,11 @@ case "${ACTION}" in
     else
       # Determine compose file based on SonarQube mode
       if [ -n "${SONAR_TOKEN:-}" ] && [ -n "${SONAR_HOST_URL:-}" ]; then
-        COMPOSE_SCAN="docker-compose.scan.external.yml"
+        COMPOSE_SCAN=".local/docker-compose.scan.external.yml"
       else
-        COMPOSE_SCAN="docker-compose.scan.yml"
+        COMPOSE_SCAN=".local/docker-compose.scan.yml"
       fi
-      docker compose -f "${COMPOSE_SCAN}" up --abort-on-container-exit
+      docker compose --env-file "${ROOT_DIR}/.cicd/scan-versions.env" -f "${COMPOSE_SCAN}" up --abort-on-container-exit
     fi
     echo ""
     echo "Reports saved to: ${ROOT_DIR}/reports/"
@@ -162,12 +162,12 @@ case "${ACTION}" in
 
   docs)
     echo "--- Serving documentation at http://localhost:8000 ---"
-    docker compose -f docker-compose.docs.yml up
+    docker compose -f .local/docker-compose.docs.yml up
     ;;
 
   registry)
     echo "--- Starting local Harbor registry at http://localhost:80 ---"
-    docker compose -f docker-compose.registry.yml up -d
+    docker compose -f .local/docker-compose.registry.yml up -d
     echo "Harbor UI: http://localhost:80 (admin / Harbor12345)"
     ;;
 

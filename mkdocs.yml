@@ -37,6 +37,7 @@ nav:
       - Security Scanning: architecture/security-scanning.md
   - Operations:
       - Getting Started: operations/getting-started.md
+      - Template Workflow: operations/template-workflow.md
       - CVE Patching: operations/cve-patching.md
       - Releasing: operations/releasing.md
   - Reference:

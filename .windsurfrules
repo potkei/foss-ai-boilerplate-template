@@ -1,0 +1,19 @@
+# Windsurf Rules — FOSS CVE Patching Boilerplate
+
+Read `.agents/CONSTITUTION.md` first. All rules there apply here.
+
+## This Repository
+Managed fork of a FOSS project. Downloads official release archives (not git clone),
+applies CVE security patches, compiles from source, ships patched container images.
+
+## Key Rules
+- Source build (`Dockerfile`) always has priority over `Dockerfile.binary`
+- Version format: `{upstream_version}-r{N}` — e.g. `6.0.0-r1`
+- Branch format: `release/6.0.0-r1`, `fix/CVE-2024-1234`
+- Scripts stored as `.txt` extensions in repo: `build.sh.txt`, `scan.sh.txt`
+- No secrets committed. No `latest` image tags.
+- Every patch in `patches/` needs header: CVE, Upstream-PR, Keep-on-sync
+
+## Skills in `.agents/skills/`
+cve-patch | build-strategy-switch | onboard-foss-project | release
+upstream-sync | upstream-contribute | security-scan | go-dependency-patch
