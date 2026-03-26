@@ -147,6 +147,19 @@ load_jq_version_fn() {
 }
 
 # ---------------------------------------------------------------------------
+# Script references — guard against missing companion scripts
+# ---------------------------------------------------------------------------
+
+@test "patches/verify.sh.txt exists in repo" {
+  [ -f "${REPO_ROOT}/patches/verify.sh.txt" ]
+}
+
+@test "build-source.sh.txt guards verify.sh call with existence check" {
+  grep -q '\[ -x.*patches/verify.sh' \
+    "${REPO_ROOT}/.cicd/docker-resources/scripts/build-source.sh.txt"
+}
+
+# ---------------------------------------------------------------------------
 # Container runtime
 # ---------------------------------------------------------------------------
 

@@ -22,9 +22,13 @@ echo "Upstream version: ${UPSTREAM_VERSION}"
 echo "Our version:      ${OUR_VERSION}"
 echo "Image tag:        ${IMAGE_TAG}"
 
-# Verify patches apply cleanly before building
+# Verify patch headers before building
 echo "--- Verifying patches ---"
-"${ROOT_DIR}/patches/verify.sh"
+if [ -x "${ROOT_DIR}/patches/verify.sh" ]; then
+  "${ROOT_DIR}/patches/verify.sh"
+else
+  echo "  WARN: patches/verify.sh not found — run init.sh to translate scripts."
+fi
 
 # Build
 echo "--- Building source image ---"
