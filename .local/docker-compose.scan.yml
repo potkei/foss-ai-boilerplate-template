@@ -158,6 +158,9 @@ services:
   dependency-check:
     image: owasp/dependency-check:${OWASP_DC_VERSION:-latest}
     pull_policy: missing
+    env_file:
+      - path: ../.cicd/docker-resources/secrets/nvd.env
+        required: false
     volumes:
       - ..:/src
       - dependency_check_data:/usr/share/dependency-check/data
@@ -168,6 +171,7 @@ services:
       - --format=JSON
       - --out=/report
       - --project=${PROJECT_NAME:-foss-project}
+      - --nvdApiKey=${NVD_API_KEY:-}
 
   # ---------------------------------------------------------------------------
   # Gitleaks — secret detection in git history
