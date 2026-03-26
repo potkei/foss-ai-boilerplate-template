@@ -12,11 +12,25 @@
 ```bash
 # Clone the repo
 git clone <repo-url> && cd <repo-name>
+```
 
-# Bootstrap: rename init.sh.txt to init.sh (required once)
-mv init.sh.txt init.sh
-chmod +x init.sh
+!!! warning "Manual step required before first run"
+    Scripts are stored as `.sh.txt` to comply with enterprise policies that block `.sh` file downloads.
+    You must rename `init.sh.txt` to `init.sh` **once** before you can run anything.
 
+    **macOS / Linux:**
+    ```bash
+    mv init.sh.txt init.sh
+    chmod +x init.sh
+    ```
+
+    **Windows (Git Bash):** `chmod +x` is not supported — use `bash` to run the script directly:
+    ```bash
+    mv init.sh.txt init.sh
+    bash init.sh
+    ```
+
+```bash
 # First-run setup — auto-builds jq if missing, translates scripts, creates directories
 ./init.sh
 

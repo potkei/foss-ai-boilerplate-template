@@ -13,12 +13,15 @@ Managed fork of an open source project with security patches and controlled buil
 
 ## Quick Start
 
-```bash
-# Bootstrap: rename init.sh.txt to init.sh (required once after cloning)
-mv init.sh.txt init.sh && chmod +x init.sh
+!!! warning "Rename init.sh.txt before first run"
+    **macOS / Linux:** `mv init.sh.txt init.sh && chmod +x init.sh`
 
+    **Windows (Git Bash):** `mv init.sh.txt init.sh` — then use `bash init.sh` instead of `./init.sh`
+
+```bash
 # First-run setup
-./init.sh
+./init.sh          # macOS/Linux
+bash init.sh       # Windows Git Bash
 
 # Onboard a FOSS project (interactive — run inside Claude Code)
 /onboard-foss-project

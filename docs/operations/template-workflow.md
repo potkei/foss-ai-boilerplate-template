@@ -46,13 +46,23 @@ graph TD
 ```bash
 git clone git@github.com:<your-org>/<project-name>.git
 cd <project-name>
-
-# Bootstrap: rename init.sh.txt to init.sh (required once)
-mv init.sh.txt init.sh
-chmod +x init.sh
-
-./init.sh
 ```
+
+!!! warning "Rename init.sh.txt before first run"
+    Scripts are stored as `.sh.txt` — rename once to bootstrap.
+
+    **macOS / Linux:**
+    ```bash
+    mv init.sh.txt init.sh
+    chmod +x init.sh
+    ./init.sh
+    ```
+
+    **Windows (Git Bash):** `chmod +x` is not supported on NTFS — use `bash` instead:
+    ```bash
+    mv init.sh.txt init.sh
+    bash init.sh
+    ```
 
 `init.sh` translates `.sh.txt` source files to executable `.sh`, creates required directories (`patches/`, `reports/`, `docs/`, `helm/`), validates prerequisites, and auto-builds `jq` from `.tools/jsonq/` using Go if `jq` is not installed.
 
@@ -196,8 +206,10 @@ No release branch needed — the template has no versioned images.
 | Task | Command |
 |---|---|
 | Create downstream repo | `gh repo create <org>/<name> --template {template-org}/{template-repo}` |
-| Bootstrap init script | `mv init.sh.txt init.sh && chmod +x init.sh` |
-| First-run setup | `./init.sh` |
+| Bootstrap (macOS/Linux) | `mv init.sh.txt init.sh && chmod +x init.sh` |
+| Bootstrap (Windows Git Bash) | `mv init.sh.txt init.sh` |
+| First-run setup (macOS/Linux) | `./init.sh` |
+| First-run setup (Windows Git Bash) | `bash init.sh` |
 | Onboard FOSS project | `/onboard-foss-project` |
 | Build (source) | `./build.sh` or `make build` |
 | Security scan | `./build.sh --scan` or `make scan` |
