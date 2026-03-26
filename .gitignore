@@ -55,3 +55,11 @@ helm/*.tgz
 
 # OS files
 Thumbs.db
+
+# Compiled local tools (built by init.sh)
+.tools/bin/jq
+.tools/bin/jq.exe
+
+# Root scripts — committed as .sh.txt, generated locally by renaming
+init.sh
+build.sh

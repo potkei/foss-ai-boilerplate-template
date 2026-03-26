@@ -28,10 +28,10 @@ flowchart LR
     end
 ```
 
-- **Local**: `docker compose -f docker-compose.scan.yml up` — spins up SonarQube + all scanners
+- **Local**: `docker compose -f .local/docker-compose.scan.yml up` — spins up SonarQube + all scanners
 - **External**: Set `SONAR_TOKEN` + `SONAR_HOST_URL` — connects to existing SonarQube
 
 ## Scan Gate
 
-The CI pipeline blocks releases if unexcepted critical or high findings are detected.
+The CI pipeline blocks releases if unexpected critical or high findings are detected.
 Exceptions must be documented in `.cicd/scan-exceptions.yml` with reason, owner, and expiry.

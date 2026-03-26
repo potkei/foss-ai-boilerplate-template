@@ -2,10 +2,10 @@
 
 ## Prerequisites
 
-- Docker (with Compose v2)
+- Docker or Podman (with Compose v2)
 - Git
-- jq
-- Optional: cosign (image signing), helm (Kubernetes deployments)
+- Go (recommended — used to auto-build `jq` if not installed)
+- Optional: `jq` (auto-built via Go during `init.sh` if missing), cosign (image signing), helm (Kubernetes deployments)
 
 ## Setup
 
@@ -13,21 +13,31 @@
 # Clone the repo
 git clone <repo-url> && cd <repo-name>
 
-# First-run setup — translates scripts, creates directories
+# Bootstrap: rename init.sh.txt to init.sh (required once)
+mv init.sh.txt init.sh
+chmod +x init.sh
+
+# First-run setup — auto-builds jq if missing, translates scripts, creates directories
 ./init.sh
 
-# Onboard your FOSS project (interactive wizard)
-make onboard
+# Onboard your FOSS project (interactive wizard — run inside Claude Code)
+/onboard-foss-project
 ```
+
+`init.sh` will:
+- Detect Docker or Podman automatically
+- Build `jq` from `.tools/jsonq/` using Go if `jq` is not installed (uses your configured `GOPROXY`)
+- Translate all `.sh.txt` source files to executable `.sh`
+- Create required directories (`patches/`, `reports/`, `docs/`, `helm/`)
 
 ## Daily Workflow
 
 ```bash
 # Build from source
-make build
+./build.sh
 
 # Run security scans
-make scan
+./build.sh --scan
 
 # View scan reports
 ls reports/

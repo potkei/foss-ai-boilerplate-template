@@ -8,13 +8,13 @@ This page covers how to create a new FOSS project from this template and how to 
 
 ```mermaid
 graph TD
-    T["foss-ai-boilerplate-template"]
+    T["{template-org}/{template-repo}"]
     T -->|"gh repo create --template"| A["downstream-repo-A (e.g. nginx-patched)"]
     T -->|"gh repo create --template"| B["downstream-repo-B (e.g. redis-patched)"]
 
     A --> A1["run: /onboard-foss-project"]
     A1 --> A2["branch: release/1.27.3-r1"]
-    A2 --> A3["branch: fix/CVE-xxx"]
+    A2 --> A3["branch: hotfix/1.27.3-CVE-xxx"]
     A3 -->|"PR + sign-off"| A2
     A2 -->|"pipeline passes"| A4["main — tag 1.27.3-r1"]
 
@@ -33,7 +33,7 @@ graph TD
 
     ```bash
     gh repo create <your-org>/<project-name> \
-      --template potkei/foss-ai-boilerplate-template \
+      --template {template-org}/{template-repo} \
       --private
     ```
 
@@ -46,10 +46,15 @@ graph TD
 ```bash
 git clone git@github.com:<your-org>/<project-name>.git
 cd <project-name>
+
+# Bootstrap: rename init.sh.txt to init.sh (required once)
+mv init.sh.txt init.sh
+chmod +x init.sh
+
 ./init.sh
 ```
 
-`init.sh` translates `.sh.txt` source files to executable `.sh`, creates required directories (`patches/`, `reports/`, `docs/`, `helm/`), and validates prerequisites.
+`init.sh` translates `.sh.txt` source files to executable `.sh`, creates required directories (`patches/`, `reports/`, `docs/`, `helm/`), validates prerequisites, and auto-builds `jq` from `.tools/jsonq/` using Go if `jq` is not installed.
 
 ### Step 3 — Run the onboard skill
 
@@ -99,10 +104,11 @@ git push origin release/<upstream_version>-r1
 
 Work in the **downstream repo**, not the template.
 
-### Step 1 — Create a fix branch
+### Step 1 — Create a hotfix branch
 
 ```bash
-git checkout -b fix/CVE-2024-XXXX   # or fix/describe-the-bug
+git checkout -b hotfix/<upstream_version>-CVE-2024-XXXX
+# e.g. hotfix/1.27.3-CVE-2024-XXXX
 ```
 
 ### Step 2 — Apply the patch
@@ -123,7 +129,7 @@ Claude Code creates `patches/0001-CVE-2024-XXXX-fix-description.patch` with the 
 ### Step 4 — PR flow
 
 ```
-fix/CVE-2024-XXXX
+hotfix/<version>-CVE-2024-XXXX
     ↓  PR: 1 reviewer + security sign-off
 release/X.Y.Z-r2
     ↓  full pipeline passes
@@ -143,7 +149,7 @@ main ← tag X.Y.Z-r2
 
 ## C — Hotfix the Template Itself
 
-If you find a bug in `init.sh`, `build.sh`, a Dockerfile, a skill file, or CI config — fix it here in the **template repo**, then propagate downstream.
+If you find a bug in `init.sh.txt`, `build.sh.txt`, a Dockerfile, a skill file, or CI config — fix it here in the **template repo**, then propagate downstream.
 
 ### Step 1 — Branch in this repo
 
@@ -171,7 +177,7 @@ No release branch needed — the template has no versioned images.
 
     ```bash
     # In each downstream repo
-    git remote add template git@github.com:potkei/foss-ai-boilerplate-template.git
+    git remote add template git@github.com:{template-org}/{template-repo}.git
     git fetch template
     git cherry-pick <commit-sha-from-template>
     ```
@@ -189,7 +195,8 @@ No release branch needed — the template has no versioned images.
 
 | Task | Command |
 |---|---|
-| Create downstream repo | `gh repo create <org>/<name> --template potkei/foss-ai-boilerplate-template` |
+| Create downstream repo | `gh repo create <org>/<name> --template {template-org}/{template-repo}` |
+| Bootstrap init script | `mv init.sh.txt init.sh && chmod +x init.sh` |
 | First-run setup | `./init.sh` |
 | Onboard FOSS project | `/onboard-foss-project` |
 | Build (source) | `./build.sh` or `make build` |

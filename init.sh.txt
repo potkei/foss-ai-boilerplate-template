@@ -21,14 +21,48 @@ echo "--- Checking prerequisites ---"
 
 MISSING=()
 
-command -v docker  >/dev/null 2>&1 || MISSING+=("docker")
-command -v git     >/dev/null 2>&1 || MISSING+=("git")
-command -v jq      >/dev/null 2>&1 || MISSING+=("jq")
+# Accept docker or podman as the container runtime
+DOCKER_CMD=""
+if command -v docker >/dev/null 2>&1; then
+  DOCKER_CMD="docker"
+elif command -v podman >/dev/null 2>&1; then
+  DOCKER_CMD="podman"
+  echo "  INFO: Using podman as container runtime."
+else
+  MISSING+=("docker or podman")
+fi
+
+command -v git >/dev/null 2>&1 || MISSING+=("git")
 
 if [ ${#MISSING[@]} -gt 0 ]; then
   echo "ERROR: Missing required tools: ${MISSING[*]}"
   echo "Install them and re-run ./init.sh"
   exit 1
+fi
+
+# jq — required for JSON parsing in build/scan/release scripts.
+# If missing, try to build a compatible replacement from tools/jsonq using Go.
+if ! command -v jq >/dev/null 2>&1; then
+  # Determine output binary name (jq.exe on Windows/Git Bash, jq elsewhere)
+  JQ_BIN="jq"
+  case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) JQ_BIN="jq.exe" ;; esac
+
+  JQ_OUT="${ROOT_DIR}/.tools/bin/${JQ_BIN}"
+
+  if command -v go >/dev/null 2>&1; then
+    echo "  INFO: jq not found — building from tools/jsonq using Go (GOPROXY=${GOPROXY:-direct})..."
+    if (cd "${ROOT_DIR}/.tools/jsonq" && go build -o "${JQ_OUT}" . 2>&1); then
+      echo "  INFO: Built .tools/bin/${JQ_BIN} successfully."
+      echo "  INFO: Add .tools/bin to your PATH: export PATH=\"\$PATH:${ROOT_DIR}/.tools/bin\""
+      export PATH="${ROOT_DIR}/.tools/bin:${PATH}"
+    else
+      echo "  WARN: Go build failed. Install jq manually or check your GOPROXY setting."
+    fi
+  else
+    echo "  WARN: jq not found and Go not installed."
+    echo "        Install Go (https://go.dev/dl/) then re-run ./init.sh — it will build jq automatically."
+    echo "        Or install jq directly: https://jqlang.github.io/jq/download/"
+  fi
 fi
 
 # Optional tools — warn but don't block
@@ -70,9 +104,9 @@ find "${ROOT_DIR}" -name "*.sh.txt" | sort | while read -r f; do
   if [ ! -f "$target" ]; then
     cp "$f" "$target"
     chmod +x "$target"
-    echo "  Translated: $(realpath --relative-to="${ROOT_DIR}" "$target")"
+    echo "  Translated: ${target#${ROOT_DIR}/}"
   else
-    echo "  Exists:     $(realpath --relative-to="${ROOT_DIR}" "$target")"
+    echo "  Exists:     ${target#${ROOT_DIR}/}"
   fi
 done
 
@@ -81,7 +115,7 @@ find "${ROOT_DIR}" -name "*.py.txt" | sort | while read -r f; do
   if [ ! -f "$target" ]; then
     cp "$f" "$target"
     chmod +x "$target"
-    echo "  Translated: $(realpath --relative-to="${ROOT_DIR}" "$target")"
+    echo "  Translated: ${target#${ROOT_DIR}/}"
   fi
 done
 
@@ -104,11 +138,11 @@ echo ""
 # -------------------------------------------------------------------------
 # 5. Verify Docker is running
 # -------------------------------------------------------------------------
-echo "--- Checking Docker daemon ---"
-if docker info >/dev/null 2>&1; then
-  echo "  Docker daemon is running."
+echo "--- Checking container runtime daemon ---"
+if ${DOCKER_CMD} info >/dev/null 2>&1; then
+  echo "  ${DOCKER_CMD} daemon is running."
 else
-  echo "  WARN: Docker daemon not reachable. Start Docker before building."
+  echo "  WARN: ${DOCKER_CMD} daemon not reachable. Start it before building."
 fi
 
 echo ""

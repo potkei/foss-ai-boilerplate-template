@@ -14,17 +14,20 @@ Managed fork of an open source project with security patches and controlled buil
 ## Quick Start
 
 ```bash
+# Bootstrap: rename init.sh.txt to init.sh (required once after cloning)
+mv init.sh.txt init.sh && chmod +x init.sh
+
 # First-run setup
 ./init.sh
 
-# Onboard a FOSS project (interactive)
-make onboard
+# Onboard a FOSS project (interactive — run inside Claude Code)
+/onboard-foss-project
 
 # Build from source (default)
-make build
+./build.sh
 
 # Run security scans
-make scan
+./build.sh --scan
 
 # Full release pipeline
 make release
