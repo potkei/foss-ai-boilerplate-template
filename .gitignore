@@ -41,9 +41,6 @@ venv/
 # MkDocs build output
 site/
 
-# Harbor config (generated at runtime)
-harbor-config/
-
 # Helm build artifacts
 helm/*.tgz
 

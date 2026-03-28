@@ -24,17 +24,25 @@ applies CVE security patches, compiles from source, and ships patched container 
 13. **Language auto-detect** — infer from `go.mod` → Go, `Cargo.toml` → Rust, `CMakeLists.txt` → C/C++, `pom.xml` → Java, `pyproject.toml` → Python, etc.; never ask unless ambiguous. Full table: CONSTITUTION §Language & Build Tool Detection
 14. **Version probe** — always try latest stable base image first; step down one minor on failure; floor = upstream's minimum requirement; never silently pin old version. Full algorithm: CONSTITUTION §Progressive Version Probe
 
-## Skills in `.agents/skills/`
+## Skills — How to Invoke
 
-- `cve-patch.md` — applying CVE patches
-- `build-strategy-switch.md` — switching source/binary
-- `onboard-foss-project.md` — setting up a new FOSS project
-- `release.md` — releasing a new version
-- `upstream-sync.md` — checking upstream for new releases
-- `upstream-contribute.md` — contributing patches back upstream
-- `security-scan.md` — running all security scans
-- `go-dependency-patch.md` — Go-specific CVE patching
-- `monorepo-add-project.md` — adding a subproject in monorepo mode
+There are no slash commands here. Instead, when the user asks you to perform one of these operations,
+**open the corresponding skill file, read it fully, then follow every step it specifies.**
+
+| User asks to… | Read and follow |
+|---|---|
+| Patch a CVE | `.agents/skills/cve-patch.md` |
+| Switch build strategy (source ↔ binary) | `.agents/skills/build-strategy-switch.md` |
+| Onboard a new FOSS project | `.agents/skills/onboard-foss-project.md` |
+| Release a new version | `.agents/skills/release.md` |
+| Check / sync with upstream | `.agents/skills/upstream-sync.md` |
+| Contribute a patch upstream | `.agents/skills/upstream-contribute.md` |
+| Run security scans | `.agents/skills/security-scan.md` |
+| Fix a Go dependency CVE | `.agents/skills/go-dependency-patch.md` |
+| Add a subproject (monorepo) | `.agents/skills/monorepo-add-project.md` |
+
+> **Important:** Do not summarize or guess the steps — read the skill file first, then execute it exactly.
+> Skills are complete runbooks with validation gates; skipping steps may produce broken or insecure output.
 
 ## Code Style
 
