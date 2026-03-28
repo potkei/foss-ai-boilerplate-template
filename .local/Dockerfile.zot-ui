@@ -17,7 +17,7 @@ FROM golang:${GO_VERSION}-alpine AS builder
 
 ARG ZOT_VERSION
 
-RUN apk add --no-cache git make nodejs npm && \
+RUN apk add --no-cache bash git make nodejs npm && \
     git clone --depth 1 --branch ${ZOT_VERSION} \
       https://github.com/project-zot/zot /src
 
